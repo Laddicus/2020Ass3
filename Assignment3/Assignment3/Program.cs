@@ -15,14 +15,14 @@ namespace Assignment3
             public Node LeftMostChild { get; set; }
             public Node RightSibling { get; set; }
 
-            public Node(string directory, List<string> file, Node leftMostChild, Node rightSibling)
+            public Node(string directory, List<string> file, Node leftMostChild, Node rightSibling) // Create a node with all fields
             {
                 Directory = directory;
                 File = file;
                 LeftMostChild = leftMostChild;
                 RightSibling = rightSibling;
-            }
-            public Node(string directory)
+            }  
+            public Node(string directory) // Create a node with only the directory
             {
                 Directory = directory;
                 File = new List<string>();
@@ -45,15 +45,16 @@ namespace Assignment3
             {
                 Node curr = Navigate(address, Root);
 
-
-                if (curr.Directory == address)
+                if (curr.Directory == address) // Double checks and writes file
                 {
                     Console.WriteLine("What do you want it to be named?");
                     curr.File.Add(Console.ReadLine());
+                    Console.WriteLine("File added at: {0}", curr.Directory);
                     return true;
                 }
                 else
                 {
+                    Console.WriteLine("Unable to write file");
                     return false;
                 }
             }
@@ -61,30 +62,40 @@ namespace Assignment3
             // Returns false if the file is not found or the path is undefined; true otherwise
             public bool RemoveFile(string address)
             {
-                string directory = address.Remove(address.Length - 1);
-                string file = address[address.Length - 1].ToString();
+                // splits the string into every occurence of '/'
+                string[] directory = address.Split('/');
+                // Remove the current directory item to find the parent directory
+                string parent = address.Remove(address.IndexOf(directory[directory.Length - 1]));
+
+                // Finds the name of the file
+                string file = directory[directory.Length - 1];
                 
-                Node curr = Navigate(directory, Root);
-                if (curr.Directory == directory)
+                Node curr = Navigate(parent, Root);
+                if (curr.Directory == parent) // Double checks and removes file
                 {
                     curr.File.Remove(file);
-
+                    Console.WriteLine("Removed file at {0}", curr.Directory);
+                    return true;
                 }
-                return false;
+                else
+                {
+                    Console.WriteLine("Unable to remove file");
+                    return false;
+                }
             }
             // Adds a directory at the given address
             // Returns false if the directory already exists or the path is undefined; true otherwise
             public bool AddDirectory(string address)
             {
                 Node curr = Navigate(address, Root);
-                if (curr.Directory == address)
+                if (curr.Directory == address) // Double checks that address is correct
                 {
-                    if(curr.LeftMostChild == null)
+                    if(curr.LeftMostChild == null) // If address has no children, insert there
                     {
                         Console.WriteLine("What do you want it to be named");
-                        curr.LeftMostChild = new Node(curr.Directory + Console.ReadLine());
+                        curr.LeftMostChild = new Node(curr.Directory + Console.ReadLine() + "/");
                     }
-                    else
+                    else // If address has a child, go through all of it's siblings until you reach the end
                     {
                         Node temp = curr.LeftMostChild;
                         while(temp.RightSibling != null)
@@ -92,12 +103,14 @@ namespace Assignment3
                             temp = temp.RightSibling;
                         }
                         Console.WriteLine("What do you want it to be named");
-                        temp.RightSibling = new Node(curr.Directory + Console.ReadLine());
+                        temp.RightSibling = new Node(curr.Directory + Console.ReadLine() + "/");
                     }
+                    Console.WriteLine("Directory added at: {0}", curr.Directory);
                     return true;
                 }
                 else
                 {
+                    Console.WriteLine("Unable to add directory");
                     return false;
                 }
 
@@ -106,21 +119,32 @@ namespace Assignment3
             // Returns false if the directory is not found or the path is undefined; true otherwise
             public bool RemoveDirectory(string address)
             {
-                string parent = address.Remove(address.Length - 1);
+                // Splits the string into every occurence of '/'
+                string[] directory = address.Split('/');
+                // Remove the current directory item to find the parent directory
+                string parent = address.Remove(address.IndexOf(directory[directory.Length - 2]));
                 
                 Node curr = Navigate(parent, Root);
-                if (curr.LeftMostChild.Directory == address)
+
+                if (curr.LeftMostChild != null && curr.LeftMostChild.Directory == address) // Checks if child is null and double checks address is correct
                 {
                     curr.LeftMostChild = curr.LeftMostChild.RightSibling;
+                    Console.WriteLine("Removed file at: {0}", curr.Directory);
                     return true;
                 }
                 else
+                {
+                    Console.WriteLine("Unable to remove dierectory");
                     return false;
+                }
             }
             // Returns the number of files in the file system
             public int NumberFiles(Node curr)
             {
-                num++;
+                if (curr == null)
+                    return num;
+                foreach (string s in curr.File)
+                    num++;
 
                 NumberFiles(curr.RightSibling);
 
@@ -131,19 +155,25 @@ namespace Assignment3
             // Prints the directories in a pre-order fashion along with their files
             public void PrintFileSystem(Node curr )
             {
+                // Checks if current node is null
                 if (curr == null)
                     return;
 
                 Console.WriteLine(curr.Directory);
+
+                // Prints current directories files
                 foreach (string s  in curr.File)
                 {
-                    Console.Write("-{0} ", s);
+                    Console.WriteLine(curr.Directory + s);
                 }
 
-                PrintFileSystem(curr.RightSibling);
-
+                // Recurses through left children
                 PrintFileSystem(curr.LeftMostChild);
+
+                // Recurses through all right siblings
+                PrintFileSystem(curr.RightSibling);
             }
+            // Navigates through system to find given address recursively
             public Node Navigate(string address, Node curr)
             {
                 if (curr == null)
@@ -166,40 +196,54 @@ namespace Assignment3
     
         static void Main()
         {
+            // First you must define the root and then it creates a new file system with that root
             Console.WriteLine("Input root");
-            FileSystem Sys = new FileSystem(Console.ReadLine());
+            FileSystem Sys = new FileSystem(Console.ReadLine()+"/");
+            // Loops forever
             while (true)
             {
-                Console.WriteLine("Make a selection:\n1. Add File\n2. Remove File\n3. Add Directory\n4. Remove Directory\n5. Find Number of Files\n6. Print File System\n7. Exit");
-                int choice = Int32.Parse(Console.ReadLine());
-                switch (choice)
+                // List of choices, if the input isn't a number, it tells you that it isn't valid, if input is out of range, it tells you it isn't an option
+                Console.WriteLine("\nMake a selection:\n1. Add File\n2. Remove File\n3. Add Directory\n4. Remove Directory\n5. Find Number of Files\n6. Print File System\n7. Exit");
+                bool parse = Int32.TryParse(Console.ReadLine(), out int choice);
+                Console.Clear();
+                if (parse)
                 {
-                    case 0:
-                        break;
-                    case 1:
-                        Console.WriteLine("At what address do you want to add a file?");
-                        Sys.AddFile(Console.ReadLine());
-                        break;
-                    case 2:
-                        Console.WriteLine("What is the address of the file you want to delete?");
-                        Sys.RemoveFile(Console.ReadLine());
-                        break;
-                    case 3:
-                        Console.WriteLine("At what address would you like to add a directory?");
-                        Sys.AddDirectory(Console.ReadLine());
-                        break;
-                    case 4:
-                        Console.WriteLine("What is the address of the directory you want to delete?");
-                        Sys.RemoveDirectory(Console.ReadLine());
-                        break;
-                    case 5:
-                        Sys.NumberFiles(Sys.Root);
-                        break;
-                    case 6:
-                        Sys.PrintFileSystem(Sys.Root);
-                        break;
-                    case 7:
-                        return;
+                    switch (choice)
+                    {
+                        case 0:
+                            break;
+                        case 1:
+                            Console.WriteLine("At what address do you want to add a file?");
+                            Sys.AddFile(Console.ReadLine());
+                            break;
+                        case 2:
+                            Console.WriteLine("What is the address of the file you want to delete?");
+                            Sys.RemoveFile(Console.ReadLine());
+                            break;
+                        case 3:
+                            Console.WriteLine("At what address would you like to add a directory?");
+                            Sys.AddDirectory(Console.ReadLine());
+                            break;
+                        case 4:
+                            Console.WriteLine("What is the address of the directory you want to delete?");
+                            Sys.RemoveDirectory(Console.ReadLine());
+                            break;
+                        case 5:
+                            Console.WriteLine(Sys.NumberFiles(Sys.Root));
+                            break;
+                        case 6:
+                            Sys.PrintFileSystem(Sys.Root);
+                            break;
+                        case 7:
+                            return;
+                        default:
+                            Console.WriteLine("Not a valid option");
+                            break;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Invalid input");
                 }
             }
         }
