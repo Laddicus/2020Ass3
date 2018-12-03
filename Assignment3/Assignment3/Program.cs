@@ -126,11 +126,25 @@ namespace Assignment3
                 
                 Node curr = Navigate(parent, Root);
 
-                if (curr.LeftMostChild != null && curr.LeftMostChild.Directory == address) // Checks if child is null and double checks address is correct
+                if (curr.LeftMostChild != null) // Checks if child is null 
                 {
-                    curr.LeftMostChild = curr.LeftMostChild.RightSibling;
-                    Console.WriteLine("Removed file at: {0}", curr.Directory);
-                    return true;
+                    if (curr.LeftMostChild.Directory == address) // If removing left most child
+                    {
+                        curr.LeftMostChild = curr.LeftMostChild.RightSibling;
+                        Console.WriteLine("Removed file at: {0}", curr.Directory);
+                        return true;
+                    }
+                    else // If removing a right sibling
+                    {
+                        curr = curr.LeftMostChild;
+                        while(curr.RightSibling.Directory != address)
+                        {
+                            curr = curr.RightSibling;
+                        }
+                        curr.RightSibling = curr.RightSibling.RightSibling;
+                        Console.WriteLine("Removed file at: {0}", curr.Directory);
+                        return true;
+                    }
                 }
                 else
                 {
